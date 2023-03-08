@@ -10,6 +10,7 @@ import requests
 from torchvision import datasets,transforms
 from torch.utils.data import DataLoader
 
+###NOTE: multithreading locally causes error, is not currently implemented
 NUM_WORKERS = os.cpu_count() #number of cpu available
 
 def download_data(source:str,
@@ -54,8 +55,7 @@ def download_data(source:str,
 def create_dataloader(train_dir: str,
                       test_dir: str,
                       transform: transforms.Compose,
-                      batch_size: int,
-                      num_workers: NUM_WORKERS):
+                      batch_size: int):
     '''
     Creates dataloaders for train and test data 
 
@@ -86,13 +86,11 @@ def create_dataloader(train_dir: str,
     #turn datasets into dataloaders
     train_dataloader = DataLoader(train_data,
                                   batch_size=batch_size,
-                                  shuffle=True,
-                                  num_workers=num_workers)
+                                  shuffle=True)
     
     test_dataloader = DataLoader(test_data,
                                   batch_size=batch_size,
-                                  shuffle=True,
-                                  num_workers=num_workers)
+                                  shuffle=True)
     
     return train_dataloader, test_dataloader, class_names
 
