@@ -1,10 +1,12 @@
 """
 Contains functions for training and testing a model
+and visualizing results
 """
 
 import torch
 from tqdm.auto import tqdm
-from typing import Dict,List,Tuple
+from typing import Dict,List
+import numpy as np
 
 def train_step(model: torch.nn.Module,
                dataloader: torch.utils.data.DataLoader,
@@ -26,6 +28,7 @@ def train_step(model: torch.nn.Module,
 
     #start training
     for batch, (X,y) in enumerate(dataloader):
+        y = y.to(torch.long) #turn labels into long type
         y_pred = model(X)
         loss = loss_fn(y_pred,y)
         
@@ -64,6 +67,7 @@ def test_step(model: torch.nn.Module,
 
     #start training
     for batch, (X,y) in enumerate(dataloader):
+        y = y.to(torch.long)
         y_pred = model(X)
         loss = loss_fn(y_pred,y)
         '''
@@ -122,9 +126,10 @@ def train(model:torch.nn.Module,
         
         print(
           f"Epoch: {epoch+1} | "
-          f"train_loss: {train_loss:.4f} | "
-          f"train_acc: {train_acc:.4f} | "
-          f"test_loss: {test_loss:.4f} | "
+          f"train loss: {train_loss:.4f} | "
+          f"train acc: {train_acc:.2f}% | "
+          f"test loss: {test_loss:.4f} |"
+          f"test acc:{test_acc:.2f}% \n"
         )
         
         #update dictionary
@@ -132,10 +137,10 @@ def train(model:torch.nn.Module,
         results["train_acc"].append(train_acc)
         results["test_loss"].append(test_loss)
         results["train_loss"].append(train_loss)
-    
+
     return results
         
-        
+
 
 
 

@@ -6,9 +6,11 @@ import os
 import zipfile 
 from pathlib import Path
 import requests
+import pandas as pd
+import torch
 
 from torchvision import datasets,transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 ###NOTE: multithreading locally causes error, is not currently implemented
 NUM_WORKERS = os.cpu_count() #number of cpu available
@@ -52,12 +54,13 @@ def download_data(source:str,
 
     return data_path / destination
 
-def create_dataloader(train_dir: str,
+def dir_dataloader(train_dir: str,
                       test_dir: str,
-                      transform: transforms.Compose,
+                      train_transform: transforms.Compose,
+                      test_transform: transforms.Compose,
                       batch_size: int):
     '''
-    Creates dataloaders for train and test data 
+    Creates dataloaders for train and test data located locally
 
     args:   train_dir (str): train directory 
             test_dir (str): test directory
@@ -77,8 +80,8 @@ def create_dataloader(train_dir: str,
     '''
 
     #create datasets using ImageFolder and apply the transform
-    train_data = datasets.ImageFolder(train_dir, transform=transform)
-    test_data = datasets.ImageFolder(test_dir,transform=transform)
+    train_data = datasets.ImageFolder(train_dir, transform=train_transform)
+    test_data = datasets.ImageFolder(test_dir,transform=test_transform)
 
     #get class names
     class_names = train_data.classes
@@ -104,7 +107,59 @@ def default_transformer(height: int,
         transforms.ToTensor()
     ])
 
+def augm_transformer(height:int,
+                     width:int):
+    '''
+    Transformer that resizes images into height x width, turns thme into Tensors 
+    an augments data by flipping them with possibilty p
+    '''
+    return transforms.Compose([
+        transforms.Resize((height,width)),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.ToTensor()
+    ])
 
+
+class custom_dataset(Dataset):
+    '''
+    Creates Datasets from pandas dataframes.
+    '''
+    def __init__(self,file_name):
+        '''
+        args:   file_name (str): file path
+        
+        NOTE: LABELS MUST BE ON COLUMN NAMED 'label'.
+        '''
+        file_df = pd.read_csv(file_name)
+        rows,cols = file_df.shape
+
+        labels = file_df['label'].values #list of values
+        data = file_df.drop(['label'],axis=1).values #list of columns
+
+        self.x_train = torch.tensor(data,dtype=torch.float32)
+        self.y_train = torch.tensor(labels,dtype=torch.float32)
+
+    def __len__(self):
+        return len(self.y_train)
+    
+    def __getitem__(self,idx):
+        return self.x_train[idx],self.y_train[idx]
+
+
+def csv_dataloader(file_path:str,
+                   batch_size:int=32):
+    '''
+    Creates dataloader from custom csv file.
+    '''
+    dataset = custom_dataset(file_name=file_path)
+    class_names = []
+    for label in dataset.y_train:
+        if label not in class_names:
+            class_names.append(label)
+    print(f"Labels type is:{type(class_names[0].item())}")
+    return DataLoader(dataset=dataset,
+                      batch_size=batch_size,
+                      shuffle=True),class_names
 
 
 

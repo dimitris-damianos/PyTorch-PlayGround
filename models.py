@@ -16,15 +16,10 @@ class DenseNN_h1(nn.Module):
             nn.Linear(in_features=input_shape,out_features=hidden_shape),
             nn.ReLU(),
             nn.Linear(in_features=hidden_shape,out_features=output_shape),
-            nn.ReLU(),
-            nn.Softmax()
+            nn.ReLU()
         )
 
     def forward(self,x:torch.Tensor):
-        '''
-        The output is a vector with shape (output_shape,1) and values between 0 and 1
-        due to softmax. 
-        '''
         return self.layers(x)
     
 ### TINYVGG is for testing purposes only ###
